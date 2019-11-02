@@ -1,0 +1,243 @@
+<html>
+
+<head>
+    <title>Giano CODE for first ASSIGNMENT</title>
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <script src="lib/three.min.js"></script>
+    <script src="lib/stats.min.js"></script>
+    <script src="lib/Coordinates.js"></script>
+    <script src="lib/OrbitControls.js"></script>
+</head>
+
+<body>
+
+    <script>
+
+        var scene, camera, renderer, controls, stats, data;
+        var cube, geometry, mat;
+        var groundNumBoxX, groundNumBoxZ;
+        var loadedHeighMap = false;
+
+        //return array with height data from img, taken from: http://danni-three.blogspot.it/2013/09/threejs-heightmaps.html
+        function getHeightData(img, scale) {
+
+            if (scale == undefined) scale = 1;
+
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var context = canvas.getContext('2d');
+
+            var size = img.width * img.height;
+            console.log(size);
+            var data = new Float32Array(size);
+
+            context.drawImage(img, 0, 0);
+
+            for (var i = 0; i < size; i++) {
+                data[i] = 0
+            }
+
+            var imgd = context.getImageData(0, 0, img.width, img.height);
+            var pix = imgd.data;
+
+            var j = 0;
+            for (var i = 0; i < pix.length; i += 4) {
+                var all = pix[i] + pix[i + 1] + pix[i + 2];  // all is in range 0 - 255*3
+                data[j++] = scale * all / 3;
+            }
+
+            return data;
+        }
+
+        function Start() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf0f0f0);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.gammaInput = true;
+            renderer.gammaOutput = true;
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            camera.position.set(30, 30, 30);
+            camera.lookAt(new THREE.Vector3(30, 25, 30));
+
+            geometry = new THREE.BoxGeometry(1, 1, 1);
+            //var texture = new THREE.TextureLoader().load('textures/11635.jpg');
+            //var material = new THREE.MeshPhongMaterial({ map: texture });
+            //var material;
+            //cube = new THREE.Mesh(geometry, material);
+            //cube.castShadow = true;
+            //cube.receiveShadow = true;
+            //console.log(THREE.REVISION);
+            //scene.add(cube);
+
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
+            hemiLight.color.setHSL(0.6, 1, 0.6);
+            hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+            hemiLight.position.set(0, 500, 0);
+            scene.add(hemiLight);
+
+            dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.color.setHSL(0.1, 1, 0.95);
+            dirLight.position.set(-1, 1.75, 1);
+            dirLight.position.multiplyScalar(50);
+            scene.add(dirLight);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+
+
+            // GROUND
+            var groundGeo = new THREE.PlaneBufferGeometry(10000, 10000);
+            var groundMat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x050505 });
+            groundMat.color.setHSL(0.095, 1, 0.75);
+            var ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.position.y = -0.5;
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
+            ground.receiveShadow = true;
+
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.top = '0px';
+            document.body.appendChild(stats.domElement);
+
+            // uncomment if you need to draw coordinate axes when building the scene
+            //Coordinates.drawAllAxes();
+
+            controls = new THREE.OrbitControls(camera);
+            controls.addEventListener('change', Render);
+        }
+
+        //Loader per tutte le immagini
+        function Loader() {
+
+            var imgLoader = new THREE.ImageLoader();
+
+            // terrain
+            var img = imgLoader.load(// resource URL
+                "textures/heightmap3.png",
+
+                // onLoad callback
+                function (image) {
+                    // use the image, e.g. draw part of it on a canvas
+                    //get height data from img
+                    data = getHeightData(image, 0.1);
+                    console.log("data:", data);
+                    loadedHeighMap = true;
+
+                    groundNumBoxX = img.width;
+                    groundNumBoxZ = img.height;
+                    // Start();
+                },
+
+                // onProgress callback currently not supported
+                undefined,
+
+                // onError callback
+                function () {
+                    console.error('An error happened.');
+                }
+            );
+
+        }
+
+        function map_range(value, low1, high1, low2, high2) {
+            return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+        }
+
+        function Builder() {
+            var i, j, k, l, m;
+            var color, r, g, b;
+            k = 0;
+            //cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xff0000 }));
+            var deep, diff;
+            for (i = 0; i < groundNumBoxX; i++) {
+                for (j = 0; j < groundNumBoxZ; j++) {
+                    cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0x000000 }));
+                    cube.position.x = i;
+                    cube.position.z = j;
+                    cube.position.y = data[k];
+                    r = Math.floor(map_range(i, 0, groundNumBoxX, 0, 255));
+                    g = Math.floor(map_range(j, 0, groundNumBoxZ, 0, 255));
+                    b = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
+                    //b= 100;
+                    console.log("R: ", r.toString(16));
+                    console.log("G: ", g.toString(16));
+                    console.log("B: ", b.toString(16));
+                    color = "0x" + (r.toString(16).length<2?"0":"")+ r.toString(16) +(g.toString(16).length<2?"0":"")+ g.toString(16) +(b.toString(16).length<2?"0":"")+ b.toString(16);
+                    console.log("Val:: ", color);
+                    cube.material.color.setHex(color);
+                    scene.add(cube.clone());
+                    
+                    if (((k > 0 && (j == 0)) || (k > 0 && j == groundNumBoxZ - 1)) || ((k > 0 && (i == 0)) || (k > 0 && i == groundNumBoxX - 1))) {
+
+                        for (l = 0; l < data[k]; l++) {
+                            cube.position.y = data[k] - 1 - l;
+                            scene.add(cube.clone());
+                        }
+                    } else if (k > 0) {
+                        deep = Math.min(data[(groundNumBoxX * (i - 1)) + (j - 1)], data[(groundNumBoxX * (i - 1)) + (j)], data[(groundNumBoxX * (i - 1)) + (j + 1)],
+                            data[(groundNumBoxX * (i)) + (j - 1)], data[(groundNumBoxX * (i)) + (j + 1)],
+                            data[(groundNumBoxX * (i + 1)) + (j - 1)], data[(groundNumBoxX * (i + 1)) + (j)], data[(groundNumBoxX * (i + 1)) + (j + 1)]);
+                        //console.log("deep: ",deep);
+                        //console.log("data: ",data[k]);
+
+
+                        if (data[k] > deep) {
+                            diff = data[k] - deep;
+                            for (m = 0; m < diff; m++) {
+                                cube.position.y = data[k] - 1 - m;
+                                scene.add(cube.clone());
+                            }
+                        }
+
+                    }
+                    k++;
+                }
+            }
+        }
+        function Update() {
+            requestAnimationFrame(Update);
+            controls.update();
+            stats.update();
+            Render();
+        }
+
+        function Render() {
+            if (loadedHeighMap) {
+                //console.log(data);
+                console.log("Dim X:", groundNumBoxX);
+                console.log("Dim Z:", groundNumBoxZ);
+                Builder();
+                //cube.material.color.setHex(0xff00ff);
+                loadedHeighMap = false;
+            }
+            renderer.render(scene, camera);
+        }
+
+        Loader();
+        Start();
+        Update();
+
+    </script>
+</body>
+
+</html>
