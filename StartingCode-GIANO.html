@@ -25,8 +25,8 @@
 
     <script>
 
-        var scene, camera, renderer, controls, stats, data;
-        var cube, geometry, mat;
+        var scene, camera, renderer, controls, stats, data, data2, tempdata;
+        var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
         var loadedHeighMap = false;
 
@@ -34,6 +34,7 @@
         function getHeightData(img, scale) {
 
             if (scale == undefined) scale = 1;
+
 
             var canvas = document.createElement('canvas');
             canvas.width = img.width;
@@ -68,17 +69,22 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0xf0f0f0);
+            renderer.setClearColor(0x333333);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.gammaInput = true;
             renderer.gammaOutput = true;
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            camera.position.set(30, 30, 30);
-            camera.lookAt(new THREE.Vector3(30, 25, 30));
+            camera.position.set(70, 50, 70);
+            camera.lookAt(new THREE.Vector3(30, 10, 30));
 
             geometry = new THREE.BoxGeometry(1, 1, 1);
+            cubebox = new THREE.Object3D();
+            scene.add(cubebox);
+
+            cubebox.position.x = -25;
+            cubebox.position.z = -25;
             //var texture = new THREE.TextureLoader().load('textures/11635.jpg');
             //var material = new THREE.MeshPhongMaterial({ map: texture });
             //var material;
@@ -105,14 +111,15 @@
 
 
             // GROUND
-            var groundGeo = new THREE.PlaneBufferGeometry(10000, 10000);
-            var groundMat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x050505 });
-            groundMat.color.setHSL(0.095, 1, 0.75);
-            var ground = new THREE.Mesh(groundGeo, groundMat);
-            ground.position.y = -0.5;
-            ground.rotation.x = -Math.PI / 2;
-            scene.add(ground);
-            ground.receiveShadow = true;
+            /* var groundGeo = new THREE.PlaneBufferGeometry(10000, 10000);
+             var groundMat = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x050505 });
+             groundMat.color.setHSL(0.095, 1, 0.75);
+             var ground = new THREE.Mesh(groundGeo, groundMat);
+             ground.position.y = -0.5;
+             ground.rotation.x = -Math.PI / 2;
+             scene.add(ground);
+             ground.receiveShadow = true;
+             */
 
             stats = new Stats();
             stats.domElement.style.position = 'absolute';
@@ -141,6 +148,7 @@
                     //get height data from img
                     data = getHeightData(image, 0.1);
                     console.log("data:", data);
+                    tempdata=data;
                     loadedHeighMap = true;
 
                     groundNumBoxX = img.width;
@@ -157,6 +165,33 @@
                 }
             );
 
+            var img = imgLoader.load(// resource URL
+                "textures/heightmap4.png",
+
+                // onLoad callback
+                function (image) {
+                    // use the image, e.g. draw part of it on a canvas
+                    //get height data from img
+                    data2 = getHeightData(image, 0.1);
+                    console.log("data:", data);
+                    loadedHeighMap = true;
+
+                    groundNumBoxX = img.width;
+                    groundNumBoxZ = img.height;
+                    // Start();
+                },
+
+                // onProgress callback currently not supported
+                undefined,
+
+                // onError callback
+                function () {
+                    console.error('An error happened.');
+                }
+            );
+
+            
+
         }
 
         function map_range(value, low1, high1, low2, high2) {
@@ -171,27 +206,30 @@
             var deep, diff;
             for (i = 0; i < groundNumBoxX; i++) {
                 for (j = 0; j < groundNumBoxZ; j++) {
-                    cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0x000000 }));
+                    cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0x000000, shininess: 97, specular: 0x20202 }));
+
                     cube.position.x = i;
                     cube.position.z = j;
-                    cube.position.y = data[k];
-                    r = Math.floor(map_range(i, 0, groundNumBoxX, 0, 255));
-                    g = Math.floor(map_range(j, 0, groundNumBoxZ, 0, 255));
+                    //cube.position.y = data[k];
+                    //r = Math.floor(map_range(i, 0, groundNumBoxX, 0, 255));
+                    //g = Math.floor(map_range(j, 0, groundNumBoxZ, 0, 255));
+                    r = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
+                    g = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
                     b = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
                     //b= 100;
                     console.log("R: ", r.toString(16));
                     console.log("G: ", g.toString(16));
                     console.log("B: ", b.toString(16));
-                    color = "0x" + (r.toString(16).length<2?"0":"")+ r.toString(16) +(g.toString(16).length<2?"0":"")+ g.toString(16) +(b.toString(16).length<2?"0":"")+ b.toString(16);
+                    color = "0x" + (r.toString(16).length < 2 ? "0" : "") + r.toString(16) + (g.toString(16).length < 2 ? "0" : "") + g.toString(16) + (b.toString(16).length < 2 ? "0" : "") + b.toString(16);
                     console.log("Val:: ", color);
                     cube.material.color.setHex(color);
-                    scene.add(cube.clone());
-                    
+                    cubebox.add(cube.clone());
+
                     if (((k > 0 && (j == 0)) || (k > 0 && j == groundNumBoxZ - 1)) || ((k > 0 && (i == 0)) || (k > 0 && i == groundNumBoxX - 1))) {
 
                         for (l = 0; l < data[k]; l++) {
                             cube.position.y = data[k] - 1 - l;
-                            scene.add(cube.clone());
+                            //cubebox.add(cube.clone());
                         }
                     } else if (k > 0) {
                         deep = Math.min(data[(groundNumBoxX * (i - 1)) + (j - 1)], data[(groundNumBoxX * (i - 1)) + (j)], data[(groundNumBoxX * (i - 1)) + (j + 1)],
@@ -205,7 +243,7 @@
                             diff = data[k] - deep;
                             for (m = 0; m < diff; m++) {
                                 cube.position.y = data[k] - 1 - m;
-                                scene.add(cube.clone());
+                                //cubebox.add(cube.clone());
                             }
                         }
 
@@ -214,13 +252,35 @@
                 }
             }
         }
+
+        function changeColor() {
+
+        }
+
+        //la fun prende un boolean TRUE per alzare i quadretti FALSE per abbassarli
+        function changeHeigh(upOrDown) {
+            var o = 0;
+            cubebox.children.forEach(element => {
+                if (element.position.y < tempdata[o] && upOrDown) {
+                    element.position.y += 1;
+                } else if (element.position.y > 0 && !upOrDown) {
+                    element.position.y -= 1;
+                }
+                o++;
+            });
+        }
+
         function Update() {
             requestAnimationFrame(Update);
             controls.update();
             stats.update();
             Render();
         }
-
+        var time = new Date(0);
+        var time2;
+        var goHigh = false;
+        //console.log(time);
+        var move = false;
         function Render() {
             if (loadedHeighMap) {
                 //console.log(data);
@@ -230,12 +290,47 @@
                 //cube.material.color.setHex(0xff00ff);
                 loadedHeighMap = false;
             }
+            if (move) {
+
+                time2 = new Date(0);
+                if ((time - time2) % 2 == 0) {
+                    changeHeigh(goHigh);
+                }
+            }
             renderer.render(scene, camera);
         }
 
         Loader();
         Start();
         Update();
+
+        document.onkeydown = function (e) {
+            e = e || window.event;
+            console.log(e.keyCode);
+            switch (e.which || e.keyCode) {
+                case 32: // left
+                    goHigh = !goHigh;
+                    move = true;
+                    break;
+
+                case 67: // up
+                    tempdata = data;
+                    console.log(tempdata);
+                    break;
+
+                case 86: // right
+                    tempdata = data2;
+                    console.log(tempdata);
+                    break;
+
+                case 40: // down
+                    goHigh = false;
+                    break;
+
+                default: return; // exit this handler for other keys
+            }
+            e.preventDefault(); // prevent the default action (scroll / move caret)
+        };
 
     </script>
 </body>
