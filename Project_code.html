@@ -1,0 +1,306 @@
+<html>
+
+<head>
+    <title>Project CODE</title>
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <script src="lib/three.min.js"></script>
+    <script src="lib/stats.min.js"></script>
+    <script src="lib/Coordinates.js"></script>
+    <script src="lib/OrbitControls.js"></script>
+</head>
+
+<body>
+
+    <script>
+
+        var scene, camera, renderer, controls, stats, data, data2, tempdata;
+        var cube, geometry, mat, cubebox;
+        var groundNumBoxX, groundNumBoxZ;
+        var loadedHeighMap = false;
+
+
+        function Start() {
+
+            //ISTANZIAZIONI STANDARD SCENE, CAMERA, RENDERER ecc..
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x333333);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.gammaInput = true;
+            renderer.gammaOutput = true;
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            camera.position.set(70, 70, 70);
+            camera.lookAt(new THREE.Vector3(30, 10, 30));
+            console.log(camera.zoom);
+            camera.zoom = 3;
+            camera.updateProjectionMatrix();
+            console.log(camera.zoom);
+
+            geometry = new THREE.BoxGeometry(1, 1, 1);
+
+            //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
+            cubebox = new THREE.Object3D();
+            scene.add(cubebox);
+
+            //LA SPOSTO AL CENTRO SAPENDO CHE SONO 50-60 PIXEL CIRCA DI IMMAGINE
+            cubebox.position.x = -25;
+            cubebox.position.z = -25;
+
+            //LUCE
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
+            hemiLight.color.setHSL(0.6, 1, 0.6);
+            hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+            hemiLight.position.set(0, 500, 0);
+            scene.add(hemiLight);
+
+            //ALTRA LUCE
+            dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.color.setHSL(0.1, 1, 0.95);
+            dirLight.position.set(-1, 1.75, 1);
+            dirLight.position.multiplyScalar(50);
+            scene.add(dirLight);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+
+            //CODICE PER AGGIUNGERE LE INFO IN ALTO A SINISTRA DEGLI FPS
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.top = '0px';
+            document.body.appendChild(stats.domElement);
+
+            // uncomment if you need to draw coordinate axes when building the scene
+            //Coordinates.drawAllAxes();
+
+            controls = new THREE.OrbitControls(camera);
+            controls.addEventListener('change', Render);
+        }
+
+        //return array with height data from img, taken from: http://danni-three.blogspot.it/2013/09/threejs-heightmaps.html
+        function getHeightData(img, scale) {
+
+            if (scale == undefined) scale = 1;
+
+
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var context = canvas.getContext('2d');
+
+            var size = img.width * img.height;
+            var data = new Float32Array(size);
+
+            context.drawImage(img, 0, 0);
+
+            for (var i = 0; i < size; i++) {
+                data[i] = 0
+            }
+
+            var imgd = context.getImageData(0, 0, img.width, img.height);
+            var pix = imgd.data;
+
+            var j = 0;
+            for (var i = 0; i < pix.length; i += 4) {
+                var all = pix[i] + pix[i + 1] + pix[i + 2];  // all is in range 0 - 255*3
+                data[j++] = Math.ceil(scale * all / 3);
+            }
+
+            return data;
+        }
+
+        //Loader per tutte le immagini
+        function Loader() {
+
+            var imgLoader = new THREE.ImageLoader();
+
+            //PASSO AL METODO load CHIAMATO SU ImageLoader IL PATH/URL
+            var img = imgLoader.load(// resource URL
+                "textures/heightmap4.png",
+
+                // onLoad callback, FUNZIONI CHIAMATE APPENA DOPO IL LOAD
+                function (image) {
+                    // use the image, e.g. draw part of it on a canvas
+                    //get height data from img
+                    data = getHeightData(image, 0.1); // QUI RICHIAMO getHeighData PASSANDOGLI image CHE è STATA APPENA CARICATA
+                    //MI SALVO HEIGH E WIDTH CHE POI USO COME LIMITI PER IL FOR
+                    groundNumBoxX = img.width;
+                    groundNumBoxZ = img.height;
+                    loadedHeighMap = true; //ATTIVO IL FLAG CHE NEL RENDER FA AVVIARE IL BUILDER
+                    // Start();
+                },
+
+                // onProgress callback currently not supported, FORSE QUESTA NON FUNZIONA MA SERVE PER CHIAMARE METODI DURANTE IL LOAD
+                undefined,
+
+                // onError callback, SE SI ROMPE QUALCOSA DURANTE LA LOAD DA ERRORE
+                function () {
+                    console.error('An error happened.');
+                }
+            );
+
+        }
+
+        function map_range(value, low1, high1, low2, high2) {
+            return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+        }
+
+        function Builder_sample() {
+            var i, j, k;// i RIGHE, j COLONNE, k indice per tenere il conto e scorrere l'array delle altezze data
+            k = 0;
+            //cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xff0000 }));
+            var deep, diff;
+            for (i = 0; i < groundNumBoxX; i++) {
+                for (j = 0; j < groundNumBoxZ; j++) {
+
+                    cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xf00f0, shininess: 97, specular: 0x20202 }));
+                    cube.position.x = i;
+                    cube.position.z = j;
+
+                    var c = g = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
+                    c = (c.toString(16).length < 2 ? "0" : "") + c.toString(16);
+                    cube.material.color.setHex("0X" + c + "" + c + "" + c);
+
+                    cubebox.add(cube.clone());
+
+                    k++;
+                }
+            }
+
+        }
+
+        function Go_up() {
+            var done = false;
+            var i = 0;
+            while (!done) {
+                done = true;
+                cubebox.children.forEach(element => {
+                    if(element.position.y<data[i]){
+                        element.position.y +=1;
+                        done = false;
+                    }
+                    i++;
+                });
+                i=0;
+            }
+        }
+
+        function Go_down() {
+            var done = false;
+
+            while (!done) {
+                done = true;
+                cubebox.children.forEach(element => {
+                    if(element.position.y>0){
+                        element.position.y -=1;
+                        done = false;
+                    }
+                });
+            }
+        }
+
+        function Builder() {
+            var i, j, k;// i RIGHE, j COLONNE, k indice per tenere il conto e scorrere l'array delle altezze data
+            k = 0;
+            //cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xff0000 }));
+            var deep, diff;
+            for (i = 0; i < groundNumBoxX; i++) {
+                for (j = 0; j < groundNumBoxZ; j++) {
+
+                    cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xf00f0, shininess: 97, specular: 0x20202 }));
+                    cube.position.x = i;
+                    cube.position.z = j;
+                    cube.position.y = data[k];
+                    var c = g = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
+                    c = (c.toString(16).length < 2 ? "0" : "") + c.toString(16);
+                    cube.material.color.setHex("0X" + c + "" + c + "" + c);
+
+                    cubebox.add(cube.clone());
+
+                    if ((i != 0 && (j != groundNumBoxZ || j != 0)) || (i != groundNumBoxX - 1 && (j != groundNumBoxZ || j != 0))) {
+
+                        deep = Math.min(data[(groundNumBoxX * (i - 1)) + (j - 1)], data[(groundNumBoxX * (i - 1)) + (j)], data[(groundNumBoxX * (i - 1)) + (j + 1)],
+                            data[(groundNumBoxX * (i)) + (j - 1)], data[(groundNumBoxX * (i)) + (j + 1)],
+                            data[(groundNumBoxX * (i + 1)) + (j - 1)], data[(groundNumBoxX * (i + 1)) + (j)], data[(groundNumBoxX * (i + 1)) + (j + 1)]);
+
+                        if (data[k] > deep) {
+                            diff = Math.ceil(data[k] - deep);
+                            //console.log(Math.ceil(diff));
+                            for (m = 0; m < diff; m++) {
+                                cubett = cube.clone();
+                                cubett.position.x = 0;
+                                cubett.position.z = 0;
+                                cubett.position.y = 0 - 1 - m;
+                                cubett.material.color.setHex("0X" + c + c + c);
+                                cubebox.children[k].add(cubett.clone());
+                            }
+                        }
+                    }
+
+                    k++;
+                }
+            }
+        }
+
+
+        function Update() {
+            requestAnimationFrame(Update);
+            controls.update();
+            stats.update();
+            Render();
+        }
+
+        function Render() {
+            if (loadedHeighMap) {
+                //Builder();
+                Builder_sample();
+                loadedHeighMap = false;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        Loader();
+        Start();
+        Update();
+        var goHigh = true;
+        document.onkeydown = function (e) {
+            e = e || window.event;
+            console.log(e.keyCode);
+            switch (e.which || e.keyCode) {
+                case 32: // space
+                    if(goHigh){
+                        Go_up();
+                    }else{
+                        Go_down();
+                    }
+                    console.log("yolo");    
+                    goHigh = !goHigh;
+                    break;
+
+                default: return; // exit this handler for other keys
+            }
+            e.preventDefault(); // prevent the default action (scroll / move caret)
+        };
+
+
+    </script>
+</body>
+
+</html>
