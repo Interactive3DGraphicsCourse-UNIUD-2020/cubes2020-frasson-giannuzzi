@@ -29,7 +29,7 @@
         var scene, camera, renderer, controls, stats, data, data2, tempdata;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
-        var guiControls, datGUI;    //VARIABILI GUI
+        var guiControls, datGUI, parametri;    //VARIABILI GUI
         var loadedHeighMap = false;
 
 
@@ -54,24 +54,39 @@
             geometry = new THREE.BoxGeometry(1, 1, 1);
 
 
+           
+
             //FUNZIONI GUI
             guiControls = new function(){
-                this.rotationX = 0.01;
-                this.rotationY = 0.01;
-                this.rotationZ = 0.01;
+                this.rotationX = 0;
+                this.rotationY = 0;
+                this.rotationZ = 0;
             }
 
-         
+            //PARAMETRI INIZIALI CAMERA
+            parametri = {
+                x: 0,
+                y: 0,
+                z: 0
+                }
+
             //ISTANZIO OGGETTO GUI E AGGIUNGO BOTTONI
             datGUI = new dat.GUI();
             datGUI .add(guiControls, 'rotationX', 0, 1);
             datGUI .add(guiControls, 'rotationY', 0, 1);
             datGUI .add(guiControls, 'rotationZ', 0, 1);
-            /*
-            datGUI .add( camera.position, 'z', -500, 500 ).step(5).onChange( function( value ){ camera.position.z = value; } );
-            datGUI .add( camera.position, 'x', -500, 500 ).step(5).onChange( function( value ){ camera.position.x = value; } );
-            datGUI .add( camera.position, 'y', -500, 500 ).step(5).onChange( function( value ){ camera.position.y = value; } );
-            */
+
+
+            datGUI .add(parametri, 'x', -50, 50).onChange(function(valore){
+                    cameraZ(valore);
+            });
+            datGUI .add(parametri, 'y', -50, 50).onChange(function(valore){
+                    cameraX(valore);
+            });
+            datGUI .add(parametri, 'z', -50, 50).onChange(function(valore){
+                    cameraY(valore);
+            });
+          
 
             //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
             cubebox = new THREE.Object3D();
@@ -218,6 +233,17 @@
             cubebox.rotation.z += guiControls.rotationZ; 
 
             renderer.render(scene, camera);
+        }
+
+        //FUNZIONI CHE CAMBIANO VALORE POSIZIONE CAMERA
+        function cameraX(valore){
+            camera.position.x = valore;
+        }
+        function cameraY(valore){
+            camera.position.y = valore;
+        }
+        function cameraZ(valore){
+            camera.position.z = valore;
         }
 
         Loader();
