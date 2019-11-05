@@ -19,6 +19,7 @@
     <script src="lib/stats.min.js"></script>
     <script src="lib/Coordinates.js"></script>
     <script src="lib/OrbitControls.js"></script>
+    <script src="lib/dat.gui.min.js"></script>
 </head>
 
 <body>
@@ -28,6 +29,7 @@
         var scene, camera, renderer, controls, stats, data, data2, tempdata;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
+        var guiControls, datGUI;    //VARIABILI GUI
         var loadedHeighMap = false;
 
 
@@ -50,6 +52,26 @@
             camera.lookAt(new THREE.Vector3(30, 10, 30));
 
             geometry = new THREE.BoxGeometry(1, 1, 1);
+
+
+            //FUNZIONI GUI
+            guiControls = new function(){
+                this.rotationX = 0.01;
+                this.rotationY = 0.01;
+                this.rotationZ = 0.01;
+            }
+
+         
+            //ISTANZIO OGGETTO GUI E AGGIUNGO BOTTONI
+            datGUI = new dat.GUI();
+            datGUI .add(guiControls, 'rotationX', 0, 1);
+            datGUI .add(guiControls, 'rotationY', 0, 1);
+            datGUI .add(guiControls, 'rotationZ', 0, 1);
+            /*
+            datGUI .add( camera.position, 'z', -500, 500 ).step(5).onChange( function( value ){ camera.position.z = value; } );
+            datGUI .add( camera.position, 'x', -500, 500 ).step(5).onChange( function( value ){ camera.position.x = value; } );
+            datGUI .add( camera.position, 'y', -500, 500 ).step(5).onChange( function( value ){ camera.position.y = value; } );
+            */
 
             //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
             cubebox = new THREE.Object3D();
@@ -85,8 +107,10 @@
             // uncomment if you need to draw coordinate axes when building the scene
             //Coordinates.drawAllAxes();
 
+            /*
             controls = new THREE.OrbitControls(camera);
             controls.addEventListener('change', Render);
+            */
         }
 
         //return array with height data from img, taken from: http://danni-three.blogspot.it/2013/09/threejs-heightmaps.html
@@ -177,7 +201,7 @@
 
         function Update() {
             requestAnimationFrame(Update);
-            controls.update();
+            //controls.update();
             stats.update();
             Render();
         }
@@ -187,7 +211,12 @@
                 Builder();
                 loadedHeighMap = false;
             }
-        
+
+            //MODIFICHE VALORI TRAMITE GUI
+            cubebox.rotation.x += guiControls.rotationX;         
+            cubebox.rotation.y += guiControls.rotationY; 
+            cubebox.rotation.z += guiControls.rotationZ; 
+
             renderer.render(scene, camera);
         }
 
