@@ -49,11 +49,9 @@
             document.body.appendChild(renderer.domElement);
 
             camera.position.set(70, 50, 70);
-            camera.lookAt(new THREE.Vector3(30, 10, 30));
+            camera.lookAt(new THREE.Vector3(-25, 0, -25));
 
             geometry = new THREE.BoxGeometry(1, 1, 1);
-
-
            
 
             //FUNZIONI GUI
@@ -65,29 +63,46 @@
 
             //PARAMETRI INIZIALI CAMERA
             parametri = {
-                x: 0,
-                y: 0,
-                z: 0
+                x: 70,
+                y: 50,
+                z: 70
                 }
 
             //ISTANZIO OGGETTO GUI E AGGIUNGO BOTTONI
             datGUI = new dat.GUI();
+
+            //HEIGHTMAP
             datGUI .add(guiControls, 'rotationX', 0, 1);
             datGUI .add(guiControls, 'rotationY', 0, 1);
-            datGUI .add(guiControls, 'rotationZ', 0, 1);
+            datGUI .add(guiControls, 'rotationZ', 0, 1);           
+            var defCube = { DefaultCube:function(){ 
+                cubebox.position.x = -25;
+                cubebox.position.y = 0;
+                cubebox.position.z = -25;
+                cubebox.rotation.x = 0;
+                cubebox.rotation.y = 0;
+                cubebox.rotation.z = 0;
+             }};
+            datGUI.add(defCube,'DefaultCube');
 
-
-            datGUI .add(parametri, 'x', -50, 50).onChange(function(valore){
+            //CAMERA    
+            datGUI .add(parametri, 'x', 0, 140).onChange(function(valore){
                     cameraZ(valore);
             });
-            datGUI .add(parametri, 'y', -50, 50).onChange(function(valore){
+            datGUI .add(parametri, 'y', 0, 100).onChange(function(valore){
                     cameraX(valore);
             });
-            datGUI .add(parametri, 'z', -50, 50).onChange(function(valore){
+            datGUI .add(parametri, 'z', 0, 140).onChange(function(valore){
                     cameraY(valore);
-            });
+            });             
+            var defCam = { DefaultCamera:function(){ 
+                camera.position.x = 70;
+                camera.position.y = 50;
+                camera.position.z = 70;
+             }};
+            datGUI.add(defCam,'DefaultCamera');
           
-
+ 
             //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
             cubebox = new THREE.Object3D();
             scene.add(cubebox);
@@ -118,6 +133,7 @@
             stats.domElement.style.position = 'absolute';
             stats.domElement.style.top = '0px';
             document.body.appendChild(stats.domElement);
+
 
             // uncomment if you need to draw coordinate axes when building the scene
             //Coordinates.drawAllAxes();
@@ -216,7 +232,7 @@
 
         function Update() {
             requestAnimationFrame(Update);
-            //controls.update();
+            //controls.update();       
             stats.update();
             Render();
         }
@@ -227,10 +243,13 @@
                 loadedHeighMap = false;
             }
 
+            console.log(cubebox.rotation);
+
             //MODIFICHE VALORI TRAMITE GUI
             cubebox.rotation.x += guiControls.rotationX;         
             cubebox.rotation.y += guiControls.rotationY; 
             cubebox.rotation.z += guiControls.rotationZ; 
+
 
             renderer.render(scene, camera);
         }
