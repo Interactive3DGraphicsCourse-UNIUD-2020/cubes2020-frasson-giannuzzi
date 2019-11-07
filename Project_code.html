@@ -25,10 +25,11 @@
 
     <script>
 
-        var scene, camera, renderer, controls, stats, data, data2, tempdata;
+        var scene, camera, renderer, controls, stats, data, data2, tempdata, goHigh;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
         var loadedHeighMap = false;
+        var move = false;
 
 
         function Start() {
@@ -121,7 +122,6 @@
                 var all = pix[i] + pix[i + 1] + pix[i + 2];  // all is in range 0 - 255*3
                 data[j++] = Math.ceil(scale * all / 3);
             }
-
             return data;
         }
 
@@ -138,10 +138,36 @@
                 function (image) {
                     // use the image, e.g. draw part of it on a canvas
                     //get height data from img
-                    data = getHeightData(image, 0.1); // QUI RICHIAMO getHeighData PASSANDOGLI image CHE è STATA APPENA CARICATA
+                    data1 = getHeightData(image, 0.1); // QUI RICHIAMO getHeighData PASSANDOGLI image CHE è STATA APPENA CARICATA
                     //MI SALVO HEIGH E WIDTH CHE POI USO COME LIMITI PER IL FOR
                     groundNumBoxX = img.width;
                     groundNumBoxZ = img.height;
+                    data = data1;
+                    //loadedHeighMap = true; //ATTIVO IL FLAG CHE NEL RENDER FA AVVIARE IL BUILDER
+                    // Start();
+                },
+
+                // onProgress callback currently not supported, FORSE QUESTA NON FUNZIONA MA SERVE PER CHIAMARE METODI DURANTE IL LOAD
+                undefined,
+
+                // onError callback, SE SI ROMPE QUALCOSA DURANTE LA LOAD DA ERRORE
+                function () {
+                    console.error('An error happened.');
+                }
+            );
+
+            //PASSO AL METODO load CHIAMATO SU ImageLoader IL PATH/URL
+            var img2 = imgLoader.load(// resource URL
+                "textures/heightmap3.png",
+
+                // onLoad callback, FUNZIONI CHIAMATE APPENA DOPO IL LOAD
+                function (image) {
+                    // use the image, e.g. draw part of it on a canvas
+                    //get height data from img
+                    data2 = getHeightData(image, 0.1); // QUI RICHIAMO getHeighData PASSANDOGLI image CHE è STATA APPENA CARICATA
+                    //MI SALVO HEIGH E WIDTH CHE POI USO COME LIMITI PER IL FOR
+                    //groundNumBoxX = img2.width;
+                    //groundNumBoxZ = img2.height;
                     loadedHeighMap = true; //ATTIVO IL FLAG CHE NEL RENDER FA AVVIARE IL BUILDER
                     // Start();
                 },
@@ -191,13 +217,13 @@
             while (!done) {
                 done = true;
                 cubebox.children.forEach(element => {
-                    if(element.position.y<data[i]){
-                        element.position.y +=1;
+                    if (element.position.y < data[i]) {
+                        element.position.y += 1;
                         done = false;
                     }
                     i++;
                 });
-                i=0;
+                i = 0;
             }
         }
 
@@ -207,57 +233,123 @@
             while (!done) {
                 done = true;
                 cubebox.children.forEach(element => {
-                    if(element.position.y>0){
-                        element.position.y -=1;
+                    if (element.position.y > 0) {
+                        element.position.y -= 1;
                         done = false;
                     }
                 });
             }
         }
 
-        function Builder() {
-            var i, j, k;// i RIGHE, j COLONNE, k indice per tenere il conto e scorrere l'array delle altezze data
+        function Builder(first) {
+            var i, j, k, n;// i RIGHE, j COLONNE, k indice per tenere il conto e scorrere l'array delle altezze data
             k = 0;
+            n = 0;
             //cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xff0000 }));
-            var deep, diff;
+            var deep, diff, min;
+            min = Math.min.apply(Math, data);
+            cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x333333 }));
             for (i = 0; i < groundNumBoxX; i++) {
                 for (j = 0; j < groundNumBoxZ; j++) {
 
-                    cube = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ color: 0xf00f0, shininess: 97, specular: 0x20202 }));
+                    cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x333333 }));
+                    line = new THREE.Line(geometry, new THREE.MeshBasicMaterial({ color: 0xff2299 }));
+                    line.position.x = 0;
+                    line.position.z = 0;
                     cube.position.x = i;
                     cube.position.z = j;
-                    cube.position.y = data[k];
+                    //cube.position.y = data[k];
                     var c = g = Math.floor(map_range(data[k], Math.min.apply(Math, data), Math.max.apply(Math, data), 0, 255));
                     c = (c.toString(16).length < 2 ? "0" : "") + c.toString(16);
                     cube.material.color.setHex("0X" + c + "" + c + "" + c);
+                    //cube.add(line.clone());
+                    if (first) {
+                        cubebox.add(cube.clone());
 
-                    cubebox.add(cube.clone());
-
-                    if ((i != 0 && (j != groundNumBoxZ || j != 0)) || (i != groundNumBoxX - 1 && (j != groundNumBoxZ || j != 0))) {
-
-                        deep = Math.min(data[(groundNumBoxX * (i - 1)) + (j - 1)], data[(groundNumBoxX * (i - 1)) + (j)], data[(groundNumBoxX * (i - 1)) + (j + 1)],
-                            data[(groundNumBoxX * (i)) + (j - 1)], data[(groundNumBoxX * (i)) + (j + 1)],
-                            data[(groundNumBoxX * (i + 1)) + (j - 1)], data[(groundNumBoxX * (i + 1)) + (j)], data[(groundNumBoxX * (i + 1)) + (j + 1)]);
-
-                        if (data[k] > deep) {
-                            diff = Math.ceil(data[k] - deep);
-                            //console.log(Math.ceil(diff));
-                            for (m = 0; m < diff; m++) {
-                                cubett = cube.clone();
-                                cubett.position.x = 0;
-                                cubett.position.z = 0;
-                                cubett.position.y = 0 - 1 - m;
-                                cubett.material.color.setHex("0X" + c + c + c);
-                                cubebox.children[k].add(cubett.clone());
-                            }
-                        }
+                    } else {
+                        cubebox.children[k].material.color.setHex("0X" + c + "" + c + "" + c);
                     }
+
+                    deep = Math.min(
+                        isNaN(data[(groundNumBoxX * (i - 1)) + (j - 1)]) ? 200 : data[(groundNumBoxX * (i - 1)) + (j - 1)],
+                        isNaN(data[(groundNumBoxX * (i - 1)) + (j)]) ? 200 : data[(groundNumBoxX * (i - 1)) + (j)],
+                        isNaN(data[(groundNumBoxX * (i - 1)) + (j + 1)]) ? 200 : data[(groundNumBoxX * (i - 1)) + (j + 1)],
+                        isNaN(data[(groundNumBoxX * (i)) + (j - 1)]) ? 200 : data[(groundNumBoxX * (i)) + (j - 1)],
+                        isNaN(data[(groundNumBoxX * (i)) + (j + 1)]) ? 200 : data[(groundNumBoxX * (i)) + (j + 1)],
+                        isNaN(data[(groundNumBoxX * (i + 1)) + (j - 1)]) ? 200 : data[(groundNumBoxX * (i + 1)) + (j - 1)],
+                        isNaN(data[(groundNumBoxX * (i + 1)) + (j)]) ? 200 : data[(groundNumBoxX * (i + 1)) + (j)],
+                        isNaN(data[(groundNumBoxX * (i + 1)) + (j + 1)]) ? 200 : data[(groundNumBoxX * (i + 1)) + (j + 1)]
+                    );
+                    //DEBUGG
+                    /*
+                    if (i == 0 || j == 0 || i == groundNumBoxX - 1 || j == groundNumBoxZ - 1) {
+                        console.log(isNaN(deep));
+                    }*/
+                    if (data[k] > deep) {
+                        diff = Math.ceil(data[k] - deep);
+                        //console.log(Math.ceil(diff));
+
+                        for (m = 0; m < diff; m++) {
+
+                            cubett = cube.clone();
+                            cubett.position.x = 0;
+                            cubett.position.z = 0;
+                            cubett.position.y = 0 - 1 - m;
+                            //cubett.material.color.setHex("0X" + c + c + c);
+                            cubebox.children[k].add(cubett);
+
+                        }
+
+                    }
+
 
                     k++;
                 }
             }
         }
 
+        function kill_child() {
+            var k = 0;
+            for (k = 0; k < groundNumBoxX * groundNumBoxZ; k++) {
+                if (cubebox.children[k].children.length > 0) {
+
+                    for (n = cubebox.children[k].children.length - 1; n >= 0; n--) {
+                        cubebox.children[k].remove(cubebox.children[k].children[n]);
+                    }
+                }
+            }
+            console.log('done');
+        }
+
+
+
+        function changeHeigh(upOrDown) {
+            var o = 0;
+            cubebox.children.forEach(element => {
+
+                if (element.position.y < data[o] && upOrDown) {
+                    element.position.y += 1;
+                } else if (element.position.y > 0 && !upOrDown) {
+                    element.position.y -= 1;
+                }
+                o++;
+            });
+        }
+
+        function fixHeigh() {
+            var o = 0;
+            cubebox.children.forEach(element => {
+
+                if (element.position.y =! data[o]) {
+                    if(element.position.y>data){
+                        element.position.y += 1; 
+                    }else{
+                        element.position.y -= 1;
+                    }
+                }
+                o++;
+            });
+        }
 
         function Update() {
             requestAnimationFrame(Update);
@@ -268,33 +360,57 @@
 
         function Render() {
             if (loadedHeighMap) {
-                //Builder();
-                Builder_sample();
+                Builder(true);
+                //Builder_sample();
                 loadedHeighMap = false;
             }
-
+            if (move) {
+                changeHeigh(goHigh);
+            }
             renderer.render(scene, camera);
         }
 
         Loader();
         Start();
         Update();
-        var goHigh = true;
+        var semaforo = true;
         document.onkeydown = function (e) {
             e = e || window.event;
             console.log(e.keyCode);
             switch (e.which || e.keyCode) {
                 case 32: // space
-                    if(goHigh){
-                        Go_up();
-                    }else{
-                        Go_down();
+                    if (goHigh) {
+
+                        //Go_up();
+                    } else {
+                        //Go_down();
                     }
-                    console.log("yolo");    
+
+                    move = true;
                     goHigh = !goHigh;
                     break;
-
-                default: return; // exit this handler for other keys
+                case 49:
+                    //data = data2;
+                    kill_child();
+                    Builder(false);
+                    break;
+                case 50:
+                    //data = data2;
+                    Builder(false);
+                    break;
+                case 51:
+                    //data = data2;
+                    if (semaforo) {
+                        data = data2;
+                    } else {
+                        data = data1;
+                    }
+                    fixHeigh();
+                    semaforo = !semaforo;
+                    break;
+                default:
+                    console.log(e.keyCode);
+                    return; // exit this handler for other keys
             }
             e.preventDefault(); // prevent the default action (scroll / move caret)
         };
