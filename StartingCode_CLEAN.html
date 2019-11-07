@@ -74,17 +74,21 @@
             //HEIGHTMAP
             datGUI .add(guiControls, 'rotationX', 0, 1);
             datGUI .add(guiControls, 'rotationY', 0, 1);
-            datGUI .add(guiControls, 'rotationZ', 0, 1);           
+            datGUI .add(guiControls, 'rotationZ', 0, 1);   
+                    
             var defCube = { DefaultCube:function(){ 
                 cubebox.position.x = -25;
                 cubebox.position.y = 0;
                 cubebox.position.z = -25;
                 cubebox.rotation.x = 0;
                 cubebox.rotation.y = 0;
-                cubebox.rotation.z = 0;
+                cubebox.rotation.z = 0;   
+                cubebox.scale.x = 1;
+                cubebox.scale.y = 1;
+                cubebox.scale.z = 1;             
              }};
             datGUI.add(defCube,'DefaultCube');
-
+                        
             //CAMERA    
             datGUI .add(parametri, 'x', 0, 140).onChange(function(valore){
                     cameraZ(valore);
@@ -94,7 +98,7 @@
             });
             datGUI .add(parametri, 'z', 0, 140).onChange(function(valore){
                     cameraY(valore);
-            });             
+            });                        
             var defCam = { DefaultCamera:function(){ 
                 camera.position.x = 70;
                 camera.position.y = 50;
@@ -106,6 +110,18 @@
             //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
             cubebox = new THREE.Object3D();
             scene.add(cubebox);
+
+            
+            datGUI .add(cubebox.scale,'x',0.1,2) //
+            .name('scaleX')
+            .onChange(Render);
+            datGUI .add(cubebox.scale,'y',0.1,2) //
+            .name('scaleY')
+            .onChange(Render);
+            datGUI .add(cubebox.scale,'z',0.1,2) //
+            .name('scaleZ')
+            .onChange(Render);
+           
 
             //LA SPOSTO AL CENTRO SAPENDO CHE SONO 50-60 PIXEL CIRCA DI IMMAGINE
             cubebox.position.x = -25;
@@ -264,7 +280,7 @@
         function cameraZ(valore){
             camera.position.z = valore;
         }
-
+      
         Loader();
         Start();
         Update();
