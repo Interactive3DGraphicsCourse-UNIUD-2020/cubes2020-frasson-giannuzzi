@@ -29,7 +29,7 @@
         var scene, camera, renderer, controls, stats, data, data2, tempdata;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
-        var guiControls, datGUI;    //VARIABILI GUI
+        var guiControls, datGUI, parametri;    //VARIABILI GUI
         var loadedHeighMap = false;
 
 
@@ -49,30 +49,60 @@
             document.body.appendChild(renderer.domElement);
 
             camera.position.set(70, 50, 70);
-            camera.lookAt(new THREE.Vector3(30, 10, 30));
+            camera.lookAt(new THREE.Vector3(-25, 0, -25));
 
             geometry = new THREE.BoxGeometry(1, 1, 1);
-
+           
 
             //FUNZIONI GUI
             guiControls = new function(){
-                this.rotationX = 0.01;
-                this.rotationY = 0.01;
-                this.rotationZ = 0.01;
+                this.rotationX = 0;
+                this.rotationY = 0;
+                this.rotationZ = 0;
             }
 
-         
+            //PARAMETRI INIZIALI CAMERA
+            parametri = {
+                x: 70,
+                y: 50,
+                z: 70
+                }
+
             //ISTANZIO OGGETTO GUI E AGGIUNGO BOTTONI
             datGUI = new dat.GUI();
+
+            //HEIGHTMAP
             datGUI .add(guiControls, 'rotationX', 0, 1);
             datGUI .add(guiControls, 'rotationY', 0, 1);
-            datGUI .add(guiControls, 'rotationZ', 0, 1);
-            /*
-            datGUI .add( camera.position, 'z', -500, 500 ).step(5).onChange( function( value ){ camera.position.z = value; } );
-            datGUI .add( camera.position, 'x', -500, 500 ).step(5).onChange( function( value ){ camera.position.x = value; } );
-            datGUI .add( camera.position, 'y', -500, 500 ).step(5).onChange( function( value ){ camera.position.y = value; } );
-            */
+            datGUI .add(guiControls, 'rotationZ', 0, 1);           
+            var defCube = { DefaultCube:function(){ 
+                cubebox.position.x = -25;
+                cubebox.position.y = 0;
+                cubebox.position.z = -25;
+                cubebox.rotation.x = 0;
+                cubebox.rotation.y = 0;
+                cubebox.rotation.z = 0;
+             }};
+            datGUI.add(defCube,'DefaultCube');
 
+            //CAMERA    
+            datGUI .add(parametri, 'x', 0, 140).onChange(function(valore){
+                    cameraZ(valore);
+            });
+            datGUI .add(parametri, 'y', 0, 100).onChange(function(valore){
+                    cameraX(valore);
+            });
+            datGUI .add(parametri, 'z', 0, 140).onChange(function(valore){
+                    cameraY(valore);
+            });             
+            var defCam = { DefaultCamera:function(){ 
+                camera.position.x = 70;
+                camera.position.y = 50;
+                camera.position.z = 70;
+             }};
+            datGUI.add(defCam,'DefaultCamera');
+          
+ 
             //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
             cubebox = new THREE.Object3D();
             scene.add(cubebox);
@@ -103,6 +133,7 @@
             stats.domElement.style.position = 'absolute';
             stats.domElement.style.top = '0px';
             document.body.appendChild(stats.domElement);
+
 
             // uncomment if you need to draw coordinate axes when building the scene
             //Coordinates.drawAllAxes();
@@ -201,7 +232,7 @@
 
         function Update() {
             requestAnimationFrame(Update);
-            //controls.update();
+            //controls.update();       
             stats.update();
             Render();
         }
@@ -212,12 +243,26 @@
                 loadedHeighMap = false;
             }
 
+            console.log(cubebox.rotation);
+
             //MODIFICHE VALORI TRAMITE GUI
             cubebox.rotation.x += guiControls.rotationX;         
             cubebox.rotation.y += guiControls.rotationY; 
             cubebox.rotation.z += guiControls.rotationZ; 
 
+
             renderer.render(scene, camera);
+        }
+
+        //FUNZIONI CHE CAMBIANO VALORE POSIZIONE CAMERA
+        function cameraX(valore){
+            camera.position.x = valore;
+        }
+        function cameraY(valore){
+            camera.position.y = valore;
+        }
+        function cameraZ(valore){
+            camera.position.z = valore;
         }
 
         Loader();
