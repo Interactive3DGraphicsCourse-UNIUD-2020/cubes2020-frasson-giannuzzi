@@ -1,6 +1,6 @@
 # HeightMap Morphing by Francesco & Omar
 
-![Image from Minecraft](../textures/gif.gif)
+![Image from Minecraft](/master/textures/gif.gif)
 
 # Obiettivi
 Dare una visualizzazione delle HeightMap all'utente mettendo a disposizione dello stesso alcune variabili tramite GUI che gli permettano di interagire.
