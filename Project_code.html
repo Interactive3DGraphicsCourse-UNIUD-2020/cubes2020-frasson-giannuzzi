@@ -32,10 +32,11 @@
         var tempdata, goHigh, imgs;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
-        var guiControls, datGUI, parametri;    //VARIABILI GUI
+        var guiControls, datGUI, parametri, defHeight;    //VARIABILI GUI
 
         var loadedHeighMap = false;
         var move = false;
+        var move2 = false;
 
 
         function Start() {
@@ -55,11 +56,9 @@
 
             camera.position.set(70, 70, 70);
             camera.lookAt(new THREE.Vector3(30, 10, 30));
-            console.log(camera.zoom);
-            camera.zoom = 3;
+            camera.zoom = 2;
             camera.updateProjectionMatrix();
-            console.log(camera.zoom);
-
+            
 
             geometry = new THREE.BoxGeometry(1, 1, 1);
 
@@ -73,7 +72,7 @@
 
             //INIZIALIZZO LA GUI
             initGUI();
-            
+
             //LUCE
             hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
             hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -100,13 +99,13 @@
             // uncomment if you need to draw coordinate axes when building the scene
             //Coordinates.drawAllAxes();
 
-            controls = new THREE.OrbitControls(camera);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.addEventListener('change', Render);
         }
 
         function Update() {
             requestAnimationFrame(Update);
-            controls.update();
+            //controls.update();
             stats.update();
             Render();
         }
@@ -118,8 +117,8 @@
                 //Builder_sample();
                 loadedHeighMap = false;
             }
-            if (false) {
-                changeHeigh(cubebox, data, goHigh);
+            if(move2) {
+                move2 =! changeHeigh(cubebox, data, defHeight.goHigh);
             }
             if(move){
                 move =! fixHeigh(cubebox, data);
@@ -135,7 +134,7 @@
         var semaforo = true;
         document.onkeydown = function (e) {
             e = e || window.event;
-            console.log(e.keyCode);
+            //console.log(e.keyCode);
             switch (e.which || e.keyCode) {
                 case 32: // space
                     if (goHigh) {
@@ -144,7 +143,6 @@
                     } else {
                         //Go_down();
                     }
-
                     move = true;
                     goHigh = !goHigh;
                     break;
@@ -177,7 +175,7 @@
                     semaforo = !semaforo;
                     break;
                 default:
-                    console.log(e.keyCode);
+                    //console.log(e.keyCode);
                     return; // exit this handler for other keys
             }
             e.preventDefault(); // prevent the default action (scroll / move caret)
