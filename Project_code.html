@@ -20,15 +20,20 @@
     <script src="lib/Coordinates.js"></script>
     <script src="lib/OrbitControls.js"></script>
     <script src="lib/functions.js"></script>
+    <script src="lib/dat.gui.min.js"></script>
+    <script src="lib/GUIFun.js"></script>
 </head>
 
 <body>
 
     <script>
-        var data, data1, data2, data3, data4, data5;
-        var scene, camera, renderer, controls, stats, tempdata, goHigh, imgs;
+        var data, data1, data2, data3, data4, data5; //VARIABILI LODER
+        var scene, camera, renderer, controls, stats;
+        var tempdata, goHigh, imgs;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
+        var guiControls, datGUI, parametri;    //VARIABILI GUI
+
         var loadedHeighMap = false;
         var move = false;
 
@@ -55,6 +60,7 @@
             camera.updateProjectionMatrix();
             console.log(camera.zoom);
 
+
             geometry = new THREE.BoxGeometry(1, 1, 1);
 
             //CONTENITORE DEI CUBETTI COSI DA SPOSTARLI FACILMENTE TUTTI ASSIEME
@@ -65,6 +71,9 @@
             cubebox.position.x = -25;
             cubebox.position.z = -25;
 
+            //INIZIALIZZO LA GUI
+            initGUI();
+            
             //LUCE
             hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
             hemiLight.color.setHSL(0.6, 1, 0.6);
