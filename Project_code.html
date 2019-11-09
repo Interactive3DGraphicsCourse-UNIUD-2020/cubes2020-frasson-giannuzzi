@@ -29,7 +29,7 @@
     <script>
         var data, data1, data2, data3, data4, data5; //VARIABILI LODER
         var scene, camera, renderer, controls, stats;
-        var tempdata, goHigh, imgs;
+        var tempdata, goHigh, imgs, rainbow;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
         var guiControls, datGUI, parametri, defHeight;    //VARIABILI GUI
@@ -111,8 +111,9 @@
         }
 
         function Render() {
+
             if (loadedHeighMap) {
-                console.log(data);
+                //console.log(data);
                 Builder(true, data, cubebox);
                 //Builder_sample();
                 loadedHeighMap = false;
