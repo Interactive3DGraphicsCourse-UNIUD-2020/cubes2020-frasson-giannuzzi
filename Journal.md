@@ -16,3 +16,7 @@
 7 novembre:
 -Morphing migliorato con la risoluzione del problema dei cubi mancanti (se l'heightmap 1 ne aveva meno rispetto l'heightmap 2)
 -Possibilità di effettuare ulteriori modifiche sull'heightmap e camera (settaggi di default e scalatura)
+8 novembre
+-Rimosse le possibilità di usare la camera e ruotare l'heightmap dalla GUI per motivi di funzionalità e FPS
+9 novembre
+-Pulizia generale del codice e aggiunta di nuove heightmap
