@@ -1,7 +1,7 @@
 <html>
-
+<!-- PROGETTO DI OMAR FRASSON E FRANCESCO GIANNUZZI PER INTERACTIVE 3D GRAPHIC (2020)-->
 <head>
-    <title>Project CODE</title>
+    <title>First Project</title>
     <style>
         body {
             font-family: Monospace;
@@ -28,7 +28,7 @@
 
     <script>
         var data, data1, data2, data3, data4, data5; //VARIABILI LODER
-        var scene, camera, renderer, controls, stats;
+        var scene, camera, renderer, controls, stats, cameraRotation;
         var tempdata, goHigh, imgs, rainbow;
         var cube, geometry, mat, cubebox;
         var groundNumBoxX, groundNumBoxZ;
@@ -47,17 +47,19 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x333333);
+            renderer.setClearColor(0x222222);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.gammaInput = true;
             renderer.gammaOutput = true;
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            camera.position.set(70, 70, 70);
-            camera.lookAt(new THREE.Vector3(30, 10, 30));
-            camera.zoom = 2;
+            camera.position.set(50, 70, 50);
+            camera.lookAt(new THREE.Vector3(30, 70, 30));
+            //camera.zoom = 2;
             camera.updateProjectionMatrix();
+            cameraRotation = camera.rotation;
+
             
 
             geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -96,16 +98,14 @@
             stats.domElement.style.top = '0px';
             document.body.appendChild(stats.domElement);
 
-            // uncomment if you need to draw coordinate axes when building the scene
-            //Coordinates.drawAllAxes();
-
+            //ORBIT CONTROLS PER DARE LIBERTA ALL'UTENTE
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.addEventListener('change', Render);
         }
 
         function Update() {
             requestAnimationFrame(Update);
-            //controls.update();
+            controls.update();
             stats.update();
             Render();
         }
@@ -113,9 +113,9 @@
         function Render() {
 
             if (loadedHeighMap) {
-                //console.log(data);
+
                 Builder(true, data, cubebox);
-                //Builder_sample();
+                
                 loadedHeighMap = false;
             }
             if(move2) {
@@ -131,57 +131,6 @@
         Loader();
         Start();
         Update();
-
-        var semaforo = true;
-        document.onkeydown = function (e) {
-            e = e || window.event;
-            //console.log(e.keyCode);
-            switch (e.which || e.keyCode) {
-                case 32: // space
-                    if (goHigh) {
-
-                        //Go_up();
-                    } else {
-                        //Go_down();
-                    }
-                    move = true;
-                    goHigh = !goHigh;
-                    break;
-                case 49:
-                    //data = data2;
-                    kill_child(cubebox, groundNumBoxX, groundNumBoxZ);
-                    Builder(false, data, cubebox);
-                    break;
-                case 50:
-                    
-                    Builder(false, data, cubebox);
-                    break;
-                case 51:
-                    
-                    if (data == data1) {
-                        data = data2;
-                    } else if (data == data2){
-                        data = data3;
-                    } else if(data == data3){
-                        data = data4;
-                    } else if(data == data4){
-                        data = data5;
-                    } else if(data == data5){
-                        data = data1;
-                    }
-
-                    move = true;
-                    kill_child(cubebox, groundNumBoxX, groundNumBoxZ);
-                    Builder(false, data, cubebox);
-                    semaforo = !semaforo;
-                    break;
-                default:
-                    //console.log(e.keyCode);
-                    return; // exit this handler for other keys
-            }
-            e.preventDefault(); // prevent the default action (scroll / move caret)
-        };
-
 
     </script>
 </body>
