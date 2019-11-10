@@ -3,6 +3,7 @@
 ![Image from Minecraft](/textures/gif.gif)
 
 ![Image from Minecraft](/textures/screen1.png)
+![Image from Minecraft](/textures/screen2.png)
 
 # Obiettivi
 Dare una visualizzazione delle heightMap all'utente mettendo a disposizione dello stesso alcune variabili tramite GUI che gli permettano di interagire.
